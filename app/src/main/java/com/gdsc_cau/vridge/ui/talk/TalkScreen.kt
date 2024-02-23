@@ -1,5 +1,7 @@
 package com.gdsc_cau.vridge.ui.talk
 
+import android.util.Log
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -43,12 +46,26 @@ import com.gdsc_cau.vridge.ui.theme.Grey3
 import com.gdsc_cau.vridge.ui.theme.Grey4
 import com.gdsc_cau.vridge.ui.theme.PrimaryUpperLight
 import com.gdsc_cau.vridge.ui.theme.White
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 
 enum class VoiceState {
     VOICE_LOADING,
     VOICE_PLAYING,
     VOICE_READY
 }
+
+private val dummyTalkTextData: Array<String> =
+    arrayOf(
+        "That is what I want to say",
+        "I am talking to you",
+        "I love you mom",
+        "I think dad has my bag. Can you ask him to bring it to me?"
+    )
 
 @Composable
 fun TalkScreen(
@@ -57,17 +74,19 @@ fun TalkScreen(
 ) {
     viewModel.setVid(voiceId)
 
-    val talks = viewModel.talks.collectAsStateWithLifecycle().value
+    val talks = viewModel._dummyTts
     viewModel.getTalks()
 
     TalkHistory(talks, viewModel)
     TalkInput(onSendClicked = {
-        viewModel.createTts(it)
+        viewModel.addDummyTts(it)
+        viewModel.addDummyTtsState()
     })
 }
 
 @Composable
 fun TalkHistory(talks: List<Tts>, viewModel: TalkViewModel) {
+    Log.d("TalkScreen", "TalkHistory: talks = $talks")
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -78,15 +97,29 @@ fun TalkHistory(talks: List<Tts>, viewModel: TalkViewModel) {
             TalkCard(it, viewModel)
         }
     }
+//    Column(
+//        modifier =
+//        Modifier
+//            .fillMaxSize()
+//            .padding(bottom = 75.dp)
+//            .verticalScroll(ScrollState(Int.MAX_VALUE)),
+//        verticalArrangement = Arrangement.Bottom
+//    ) {
+//        TalkCard(talkData = dummyTalkTextData[0], voiceState = dummyTalkStateData[0])
+//        TalkCard(talkData = dummyTalkTextData[1], voiceState = dummyTalkStateData[1])
+//        TalkCard(talkData = dummyTalkTextData[2], voiceState = dummyTalkStateData[2])
+//        TalkCard(talkData = dummyTalkTextData[3], voiceState = dummyTalkStateData[3])
+//    }
 }
 
 @Composable
 private fun TalkCard(talkData: Tts, viewModel: TalkViewModel) {
-    val voiceState = when (
-        viewModel.getTtsState(talkData.id).collectAsState(initial = VoiceState.VOICE_LOADING).value) {
-        true -> VoiceState.VOICE_READY
-        else -> VoiceState.VOICE_LOADING
-    }
+//    val voiceState = when (
+//        viewModel.getTtsState(talkData.id).collectAsState(initial = VoiceState.VOICE_LOADING).value) {
+//        true -> VoiceState.VOICE_READY
+//        else -> VoiceState.VOICE_LOADING
+//    }
+    val voiceState = viewModel._dummyTalkStateData[talkData.id.toInt() - 1]
 
     ElevatedCard(
         colors =
@@ -146,7 +179,11 @@ private fun TextCardController(voiceState: VoiceState, onPlay: (Boolean) -> Unit
             .width(50.dp)
             .clickable {
                 playingStatus.value = !playingStatus.value
-                onPlay(playingStatus.value)
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(2000)
+                    playingStatus.value = false
+                }
+//                onPlay(playingStatus.value)
             }
     ) {
         Icon(

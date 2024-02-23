@@ -32,6 +32,32 @@ class TalkViewModel @Inject constructor(private val repository: TalkRepository) 
     lateinit var vid: String
         private set
 
+    val _dummyTalkStateData = mutableStateListOf<VoiceState>().apply {
+        add(VoiceState.VOICE_READY)
+        add(VoiceState.VOICE_READY)
+        add(VoiceState.VOICE_READY)
+        add(VoiceState.VOICE_READY)
+    }
+
+    val _dummyTts = mutableStateListOf<Tts>().apply {
+        add(Tts(id = "1", text = "안녕하세요 반갑습니다", timestamp = 0L))
+        add(Tts(id = "2", text = "요리를 하며 창의력을 발휘하는 것을 즐깁니다.", timestamp = 0L))
+        add(Tts(id = "3", text = "건강을 유지하기 위해 저는 규칙적으로 운동을 합니다.", timestamp = 0L))
+        add(Tts(id = "4", text = "오늘 날씨가 참 좋네요.", timestamp = 0L))
+    }
+
+    fun addDummyTts(text: String) {
+        _dummyTts.add(Tts(id = (_dummyTts.size + 1).toString(), text = text, timestamp = 0L))
+    }
+
+    fun addDummyTtsState() {
+        _dummyTalkStateData.add(VoiceState.VOICE_LOADING)
+        viewModelScope.launch {
+            delay(1000)
+            _dummyTalkStateData[_dummyTalkStateData.size - 1] = VoiceState.VOICE_READY
+        }
+    }
+
     fun setVid(vid: String) {
         this.vid = vid
     }
